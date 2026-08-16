@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crop Evaluation Workspace</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#12161c; --muted:#5d6672; --line:#e2e6ec;
+  --accent:#2f6f4e; --accent2:#b4562a; --accent3:#3b6ea5; --grid:#eef1f5;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f1319; --panel:#161b23; --ink:#e6eaf0; --muted:#8b95a5; --line:#252c37;
+    --accent:#5fbf8d; --accent2:#e08a5a; --accent3:#6fa8dc; --grid:#1d242e;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;
+  border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:10}
+header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+header .ds{color:var(--muted);font-size:13px}
+.status{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:#c0392b}
+.dot.on{background:var(--accent)}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr) 370px;gap:0;align-items:start}
+@media (max-width:1300px){.layout{grid-template-columns:260px minmax(0,1fr)}
+  #chat{display:none}}
+aside{border-right:1px solid var(--line);height:calc(100vh - 49px);overflow:auto;
+  padding:14px;background:var(--panel);position:sticky;top:49px}
+#chat{border-left:1px solid var(--line);border-right:none;display:flex;flex-direction:column;
+  padding:0}
+#chat .hdr{padding:12px 14px 8px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;gap:8px}
+#chat .hdr h2{margin:0}
+#chat .hdr .live{margin-left:auto;font-size:11px;color:var(--muted)}
+button.mini{font-size:11px;padding:3px 8px;border-radius:6px;color:var(--muted)}
+button.mini:hover{color:var(--ink)}
+button.mini.confirm{border-color:#c0392b;color:#c0392b}
+#msgs{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.msg{font-size:13px;line-height:1.6}
+.msg .who{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);margin-bottom:3px}
+.msg.user .bub{background:var(--grid);border:1px solid var(--line);border-radius:9px;
+  padding:8px 11px}
+.msg.user .who{color:var(--accent3)}
+.msg.assistant .bub{padding:0 1px}
+.msg.tools>summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none;
+  padding:2px 0}
+.msg.tools>summary::-webkit-details-marker{display:none}
+.msg.tools>summary::before{content:'▸ ';opacity:.8}
+.msg.tools[open]>summary::before{content:'▾ '}
+.msg.tools>summary:hover{color:var(--ink)}
+.msg.tools .step{font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--muted);padding:2px 0 2px 13px;white-space:pre-wrap;word-break:break-all;
+  border-left:1px solid var(--line);margin-left:3px}
+.msg .bub{word-break:break-word;overflow-wrap:anywhere}
+.msg .bub p{margin:0 0 8px}
+.msg .bub p:last-child{margin-bottom:0}
+.msg .bub h3,.msg .bub h4,.msg .bub h5,.msg .bub h6{
+  margin:12px 0 5px;font-size:13px;font-weight:600}
+.msg .bub ul,.msg .bub ol{margin:0 0 8px;padding-left:19px}
+.msg .bub li{margin:2px 0}
+.msg .bub blockquote{margin:0 0 8px;padding-left:9px;border-left:2px solid var(--line);
+  color:var(--muted)}
+.msg .bub hr{border:none;border-top:1px solid var(--line);margin:10px 0}
+.msg .bub a{color:var(--accent3)}
+.msg .bub code{background:var(--grid);padding:1px 4px;border-radius:4px;font-size:12px;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.msg .bub pre{background:var(--grid);border:1px solid var(--line);border-radius:7px;
+  padding:9px 10px;overflow-x:auto;margin:0 0 8px}
+.msg .bub pre code{background:none;padding:0;font-size:11.5px;line-height:1.5}
+.composer{border-top:1px solid var(--line);padding:10px 12px;background:var(--panel)}
+.composer textarea{min-height:44px;font:13px/1.5 ui-sans-serif,system-ui,sans-serif}
+.crow{display:flex;gap:7px;align-items:center;margin-top:7px}
+.crow #agentstat{font-size:11.5px;color:var(--muted);margin-right:auto}
+.msg.error .bub{color:#e06c5a;font-size:12.5px}
+.msg.error .who{color:#e06c5a}
+.thinking{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);margin-right:6px;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.chat-empty{color:var(--muted);font-size:12.5px;padding:14px;line-height:1.7}
+.chat-empty code{background:var(--grid);padding:2px 5px;border-radius:5px;
+  display:inline-block;margin-top:5px}
+aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  margin:16px 0 8px}
+aside h2:first-child{margin-top:0}
+.tbl{margin-bottom:6px}
+.tbl>summary{cursor:pointer;padding:4px 6px;border-radius:6px;font-weight:500;
+  display:flex;justify-content:space-between;gap:8px;list-style:none}
+.tbl>summary::-webkit-details-marker{display:none}
+.tbl>summary:hover{background:var(--grid)}
+.tbl .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.cols{padding:2px 0 6px 10px}
+.col{display:flex;justify-content:space-between;gap:8px;padding:2px 6px;font-size:12.5px;
+  border-radius:4px;cursor:pointer}
+.col:hover{background:var(--grid)}
+.col .t{color:var(--muted);font-size:11px}
+textarea{width:100%;min-height:74px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
+  padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);
+  color:var(--ink);resize:vertical}
+button{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.row{display:flex;gap:7px;margin-top:7px;align-items:center;flex-wrap:wrap}
+main{padding:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;align-content:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:14px 15px;box-shadow:var(--shadow);min-width:0;overflow:hidden}
+.card.full{grid-column:1/-1}
+.card h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.card .sub{color:var(--muted);font-size:12px;margin-top:2px}
+.card .hd{display:flex;align-items:flex-start;gap:10px}
+.card .x{margin-left:auto;border:none;background:none;color:var(--muted);
+  font-size:16px;line-height:1;padding:2px 5px}
+.card .x:hover{color:var(--ink)}
+.body{margin-top:11px;overflow-x:auto}
+table{border-collapse:collapse;font-size:12.5px;width:100%}
+th{text-align:left;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);
+  padding:5px 9px 5px 0;white-space:nowrap;position:sticky;top:0;background:var(--panel)}
+td{padding:4px 9px 4px 0;border-bottom:1px solid var(--grid);white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{max-height:340px;overflow:auto}
+code,.sqlbox{font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.sqlbox{margin-top:10px;color:var(--muted);background:var(--grid);padding:7px 9px;
+  border-radius:6px;white-space:pre-wrap;word-break:break-word}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:70px 20px}
+.empty code{background:var(--grid);padding:2px 6px;border-radius:5px}
+.legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.note{font-size:13.5px;line-height:1.65}
+.note strong{font-weight:600}
+.note code{background:var(--grid);padding:1px 5px;border-radius:4px}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+.err{color:#c0392b;font-size:12.5px;margin-top:7px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>Crop Evaluation Workspace</h1>
+  <span class="ds" id="ds"></span>
+  <div class="status">
+    <button class="mini" id="clearboard" title="Remove every card from the board">Clear board</button>
+    <span class="dot" id="dot"></span><span id="stat">connecting</span>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <h2>Query</h2>
+  <textarea id="sql" spellcheck="false">SELECT type, COUNT(*) AS n FROM accession GROUP BY type;</textarea>
+  <div class="row">
+    <button class="primary" id="run">Run</button>
+    <button id="pin">Pin to board</button>
+  </div>
+  <div class="err" id="err"></div>
+  <div id="qres"></div>
+
+  <h2>Schema</h2>
+  <div id="schema"></div>
+</aside>
+
+<main id="board"><div class="empty" id="empty">
+  No cards yet.<br><br>Ask a question in your Claude Code session, or run
+  <code>python app/push.py pca</code>
+</div></main>
+
+<aside id="chat">
+  <div class="hdr">
+    <h2>Conversation</h2>
+    <span class="live" id="chatstat"></span>
+    <button class="mini" id="newchat" title="Clear the transcript and make the agent forget">New chat</button>
+  </div>
+  <div id="msgs"><div class="chat-empty" id="chatempty">
+    Ask about the data below. Charts and tables appear on the board, and
+    follow-up questions keep context.<br><br>
+    Try: <em>“which wild species has the highest Brix?”</em>
+  </div></div>
+  <div class="composer">
+    <textarea id="ask" rows="2" spellcheck="false"
+      placeholder="Ask about the data…  (Enter to send)"></textarea>
+    <div class="crow">
+      <span id="agentstat"></span>
+      <button id="stop" style="display:none">Stop</button>
+      <button class="primary" id="send">Send</button>
+    </div>
+  </div>
+</aside>
+</div>
+
+<script>
+const PALETTE = ['var(--accent)','var(--accent2)','var(--accent3)','#9b59b6','#c0392b','#16a085'];
+const $ = s => document.querySelector(s);
+const el = (t, a = {}, kids = []) => {
+  const n = document.createElementNS(a.ns || 'http://www.w3.org/1999/xhtml', t);
+  for (const [k, v] of Object.entries(a)) if (k !== 'ns') n.setAttribute(k, v);
+  for (const c of [].concat(kids)) n.append(c);
+  return n;
+};
+const svgEl = (t, a = {}, kids = []) => el(t, {...a, ns: 'http://www.w3.org/2000/svg'}, kids);
+const fmt = v => v === null || v === undefined ? '·'
+  : (typeof v === 'number' && !Number.isInteger(v) ? (+v.toFixed(3)).toString() : String(v));
+const isNum = v => typeof v === 'number';
+
+/* ---------------------------------------------------------------- charts */
+function scale(dom, rng) {
+  const [d0, d1] = dom, [r0, r1] = rng, s = d1 - d0 || 1;
+  return v => r0 + (v - d0) / s * (r1 - r0);
+}
+function axes(g, W, H, xs, ys, xLab, yLab, xd, yd) {
+  for (let i = 0; i <= 4; i++) {
+    const y = H - (H / 4) * i, v = yd[0] + (yd[1] - yd[0]) * i / 4;
+    g.append(svgEl('line', {x1: 0, x2: W, y1: y, y2: y, stroke: 'var(--grid)'}));
+    g.append(svgEl('text', {x: -8, y: y + 4, 'text-anchor': 'end', fill: 'var(--muted)',
+      'font-size': 10}, [(+v.toFixed(2)).toString()]));
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = (W / 4) * i, v = xd[0] + (xd[1] - xd[0]) * i / 4;
+    g.append(svgEl('text', {x, y: H + 15, 'text-anchor': 'middle', fill: 'var(--muted)',
+      'font-size': 10}, [(+v.toFixed(2)).toString()]));
+  }
+  g.append(svgEl('text', {x: W / 2, y: H + 32, 'text-anchor': 'middle',
+    fill: 'var(--muted)', 'font-size': 11}, [xLab || '']));
+  g.append(svgEl('text', {x: -38, y: H / 2, 'text-anchor': 'middle', fill: 'var(--muted)',
+    'font-size': 11, transform: `rotate(-90,-38,${H / 2})`}, [yLab || '']));
+}
+
+function renderScatter(d) {
+  const W = 460, H = 300, pad = {l: 52, t: 10, r: 14, b: 40};
+  const xs = d.points.map(p => p.x), ys = d.points.map(p => p.y);
+  const xd = [Math.min(...xs), Math.max(...xs)], yd = [Math.min(...ys), Math.max(...ys)];
+  const px = scale(xd, [0, W]), py = scale(yd, [H, 0]);
+  const groups = [...new Set(d.points.map(p => p.group).filter(Boolean))].sort();
+  const g = svgEl('g', {transform: `translate(${pad.l},${pad.t})`});
+  axes(g, W, H, px, py, d.x_label, d.y_label, xd, yd);
+  d.points.forEach(p => {
+    const c = groups.length ? PALETTE[groups.indexOf(p.group) % PALETTE.length] : PALETTE[0];
+    if (p.err != null) {                       // vertical error bar, drawn under the dot
+      const y0 = py(p.y - p.err), y1 = py(p.y + p.err), x = px(p.x);
+      g.append(svgEl('line', {x1: x, x2: x, y1: y0, y2: y1, stroke: c,
+        'stroke-width': 1, 'stroke-opacity': .5}));
+      [y0, y1].forEach(yy => g.append(svgEl('line', {x1: x - 3, x2: x + 3, y1: yy, y2: yy,
+        stroke: c, 'stroke-width': 1, 'stroke-opacity': .5})));
+    }
+    const dot = svgEl('circle', {cx: px(p.x), cy: py(p.y), r: 4, fill: c,
+      'fill-opacity': .75, stroke: c, 'stroke-width': .8});
+    dot.append(svgEl('title', {}, [`${p.label || ''}${p.group ? ' (' + p.group + ')' : ''}
+${d.x_label}: ${fmt(p.x)}
+${d.y_label}: ${fmt(p.y)}${p.err != null ? ' ± ' + fmt(p.err) : ''}`]));
+    g.append(dot);
+  });
+  // Fitted line: an annotation, never an observation. Dashed so it cannot be
+  // mistaken for data, and labelled with the statistics behind it.
+  if (d.fit && d.fit.slope != null) {
+    const f = d.fit;
+    const yA = f.intercept + f.slope * f.x0, yB = f.intercept + f.slope * f.x1;
+    g.append(svgEl('line', {x1: px(f.x0), y1: py(yA), x2: px(f.x1), y2: py(yB),
+      stroke: 'var(--ink)', 'stroke-width': 1.6, 'stroke-dasharray': '6 4',
+      'stroke-opacity': .65}));
+    const bits = [`y = ${fmt(f.intercept)} ${f.slope < 0 ? '−' : '+'} ${fmt(Math.abs(f.slope))}x`];
+    if (f.r != null) bits.push(`r = ${fmt(f.r)}`);
+    if (f.n != null) bits.push(`n = ${f.n}`);
+    g.append(svgEl('text', {x: W - 4, y: 12, 'text-anchor': 'end', 'font-size': 10.5,
+      fill: 'var(--muted)'}, [bits.join('   ') + '   (fitted)']));
+  }
+  const svg = svgEl('svg', {viewBox: `0 0 ${W + pad.l + pad.r} ${H + pad.t + pad.b}`,
+    width: W + pad.l + pad.r});
+  svg.append(g);
+  const wrap = el('div', {}, [svg]);
+  if (groups.length) wrap.append(legend(groups));
+  return wrap;
+}
+
+function legend(names) {
+  const l = el('div', {class: 'legend'});
+  names.forEach((n, i) => {
+    const s = el('span');
+    s.innerHTML = `<i style="background:${PALETTE[i % PALETTE.length]}"></i>${n}`;
+    l.append(s);
+  });
+  return l;
+}
+
+function renderBar(d) {
+  const items = d.items.slice(0, 40);
+  const W = 430, rowH = 21, pad = {l: 150, t: 6, r: 46, b: 26};
+  const H = items.length * rowH;
+  const max = Math.max(...items.map(i => i.value), 0) || 1;
+  const g = svgEl('g', {transform: `translate(${pad.l},${pad.t})`});
+  items.forEach((it, i) => {
+    const w = Math.max(1, it.value / max * W), y = i * rowH;
+    g.append(svgEl('rect', {x: 0, y: y + 3, width: w, height: rowH - 8, rx: 3,
+      fill: PALETTE[0], 'fill-opacity': .85}));
+    if (it.err != null) {                      // horizontal error bar on the bar end
+      const cy = y + (rowH - 2) / 2;
+      const e0 = Math.max(0, (it.value - it.err) / max * W);
+      const e1 = Math.min(W, (it.value + it.err) / max * W);
+      g.append(svgEl('line', {x1: e0, x2: e1, y1: cy, y2: cy, stroke: 'var(--ink)',
+        'stroke-width': 1, 'stroke-opacity': .55}));
+      [e0, e1].forEach(xx => g.append(svgEl('line', {x1: xx, x2: xx, y1: cy - 3, y2: cy + 3,
+        stroke: 'var(--ink)', 'stroke-width': 1, 'stroke-opacity': .55})));
+    }
+    const lab = it.label.length > 24 ? it.label.slice(0, 23) + '…' : it.label;
+    g.append(svgEl('text', {x: -9, y: y + rowH / 2 + 3, 'text-anchor': 'end',
+      'font-size': 11.5, fill: 'var(--ink)'}, [lab]));
+    g.append(svgEl('text', {x: (it.err != null ? (it.value + it.err) / max * W : w) + 7,
+      y: y + rowH / 2 + 3, 'font-size': 11, fill: 'var(--muted)'},
+      [fmt(it.value) + (it.err != null ? ' ± ' + fmt(it.err) : '')]));
+  });
+  g.append(svgEl('text', {x: W / 2, y: H + 17, 'text-anchor': 'middle',
+    fill: 'var(--muted)', 'font-size': 11}, [d.y_label || '']));
+  const svg = svgEl('svg', {viewBox: `0 0 ${W + pad.l + pad.r} ${H + pad.t + pad.b}`,
+    width: W + pad.l + pad.r});
+  svg.append(g);
+  return svg;
+}
+
+function renderHistogram(d) {
+  const W = 440, H = 250, pad = {l: 50, t: 8, r: 12, b: 42};
+  const nb = d.edges.length - 1;
+  const max = Math.max(...d.series.flatMap(s => s.counts)) || 1;
+  const bw = W / nb;
+  const g = svgEl('g', {transform: `translate(${pad.l},${pad.t})`});
+  axes(g, W, H, null, null, d.x_label, 'count',
+       [d.edges[0], d.edges[nb]], [0, max]);
+  d.series.forEach((s, si) => {
+    s.counts.forEach((c, i) => {
+      if (!c) return;
+      const h = c / max * H;
+      const sub = bw / d.series.length;
+      g.append(svgEl('rect', {x: i * bw + si * sub + 1, y: H - h,
+        width: Math.max(1, sub - 1.5), height: h, rx: 1.5,
+        fill: PALETTE[si % PALETTE.length], 'fill-opacity': .82}));
+    });
+  });
+  const svg = svgEl('svg', {viewBox: `0 0 ${W + pad.l + pad.r} ${H + pad.t + pad.b}`,
+    width: W + pad.l + pad.r});
+  svg.append(g);
+  const wrap = el('div', {}, [svg]);
+  if (d.series.length > 1) wrap.append(legend(d.series.map(s => s.name)));
+  return wrap;
+}
+
+function renderHeatmap(d) {
+  const n = d.labels.length, cell = 46, pad = {l: 132, t: 96, r: 10, b: 10};
+  const g = svgEl('g', {transform: `translate(${pad.l},${pad.t})`});
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const v = d.matrix[i][j];
+      const c = v >= 0 ? `rgba(47,111,78,${Math.abs(v) * .85 + .06})`
+                       : `rgba(180,86,42,${Math.abs(v) * .85 + .06})`;
+      const r = svgEl('rect', {x: j * cell, y: i * cell, width: cell - 2,
+        height: cell - 2, rx: 3, fill: c});
+      r.append(svgEl('title', {}, [`${d.labels[i]} vs ${d.labels[j]}: r = ${v.toFixed(3)}`]));
+      g.append(r);
+      g.append(svgEl('text', {x: j * cell + cell / 2 - 1, y: i * cell + cell / 2 + 3,
+        'text-anchor': 'middle', 'font-size': 10.5,
+        fill: Math.abs(v) > .55 ? '#fff' : 'var(--ink)'}, [v.toFixed(2)]));
+    }
+    g.append(svgEl('text', {x: -9, y: i * cell + cell / 2 + 3, 'text-anchor': 'end',
+      'font-size': 11, fill: 'var(--ink)'}, [d.labels[i]]));
+    g.append(svgEl('text', {x: i * cell + cell / 2, y: -9, 'font-size': 11,
+      fill: 'var(--ink)', 'text-anchor': 'start',
+      transform: `rotate(-45,${i * cell + cell / 2},-9)`}, [d.labels[i]]));
+  }
+  const svg = svgEl('svg', {viewBox: `0 0 ${n * cell + pad.l + pad.r} ${n * cell + pad.t + pad.b}`,
+    width: n * cell + pad.l + pad.r});
+  svg.append(g);
+  return svg;
+}
+
+/* horizontal dendrogram: distance on x, leaves down the right edge */
+function renderTree(d) {
+  const n = d.labels.length;
+  const rowH = 17, W = 430, pad = {l: 8, t: 10, r: 250, b: 26};
+  const H = n * rowH;
+  const maxD = Math.max(...d.dcoord.flat()) || 1;
+  const maxI = Math.max(...d.icoord.flat()) || 1;
+  const px = v => W - (v / maxD) * W;          // distance → x (0 distance at right)
+  const py = v => (v / maxI) * H;              // leaf position → y
+  const g = svgEl('g', {transform: `translate(${pad.l},${pad.t})`});
+  for (let k = 0; k <= 4; k++) {
+    const v = maxD * k / 4, x = px(v);
+    g.append(svgEl('line', {x1: x, x2: x, y1: 0, y2: H, stroke: 'var(--grid)'}));
+    g.append(svgEl('text', {x, y: H + 15, 'text-anchor': 'middle', 'font-size': 10,
+      fill: 'var(--muted)'}, [(+v.toFixed(2)).toString()]));
+  }
+  d.icoord.forEach((ic, k) => {
+    const dc = d.dcoord[k];
+    const pts = ic.map((v, i) => `${px(dc[i])},${py(v)}`).join(' ');
+    g.append(svgEl('polyline', {points: pts, fill: 'none', stroke: 'var(--muted)',
+      'stroke-width': 1.2, 'stroke-linejoin': 'round'}));
+    // Bootstrap/support value at the merge point, when the caller supplied one.
+    if (d.support && d.support[k] != null) {
+      g.append(svgEl('text', {x: px(dc[1]) + 3, y: py((ic[1] + ic[2]) / 2) - 2,
+        'font-size': 9, fill: 'var(--muted)'}, [String(d.support[k])]));
+    }
+  });
+  const groups = [...new Set(d.groups.filter(Boolean))].sort();
+  d.labels.forEach((lab, i) => {
+    const y = py(5 + i * 10);
+    const c = groups.length ? PALETTE[groups.indexOf(d.groups[i]) % PALETTE.length] : PALETTE[0];
+    g.append(svgEl('circle', {cx: W, cy: y, r: 3, fill: c}));
+    const t = lab.length > 34 ? lab.slice(0, 33) + '…' : lab;
+    g.append(svgEl('text', {x: W + 9, y: y + 3.5, 'font-size': 11, fill: 'var(--ink)'}, [t]));
+  });
+  g.append(svgEl('text', {x: W / 2, y: H + 30, 'text-anchor': 'middle', 'font-size': 11,
+    fill: 'var(--muted)'},
+    [d.distance_label || 'genetic distance (fraction of markers differing)']));
+  const svg = svgEl('svg', {viewBox: `0 0 ${W + pad.l + pad.r} ${H + pad.t + pad.b}`,
+    width: W + pad.l + pad.r});
+  svg.append(g);
+  const wrap = el('div', {}, [svg]);
+  if (groups.length) wrap.append(legend(groups));
+  return wrap;
+}
+
+function renderTable(d) {
+  const t = el('table');
+  const hr = el('tr');
+  d.columns.forEach(c => hr.append(el('th', {}, [c])));
+  t.append(el('thead', {}, [hr]));
+  const tb = el('tbody');
+  d.rows.forEach(r => {
+    const tr = el('tr');
+    r.forEach(v => tr.append(el('td', isNum(v) ? {class: 'num'} : {}, [fmt(v)])));
+    tb.append(tr);
+  });
+  t.append(tb);
+  const wrap = el('div', {class: 'scroll'}, [t]);
+  if (d.truncated) wrap.append(el('div', {class: 'sub'}, ['(truncated)']));
+  return wrap;
+}
+
+function renderNote(d) {
+  const n = el('div', {class: 'note'});
+  n.innerHTML = d.text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+  return n;
+}
+
+const RENDER = {table: renderTable, bar: renderBar, scatter: renderScatter,
+  histogram: renderHistogram, heatmap: renderHeatmap, tree: renderTree, note: renderNote};
+
+/* ----------------------------------------------------------------- cards */
+function addCard(c, prepend = true) {
+  $('#empty')?.remove();
+  const card = el('div', {class: 'card' + (c.width === 'full' ? ' full' : '')});
+  card.dataset.id = c.id;
+  const hd = el('div', {class: 'hd'});
+  const ttl = el('div', {}, [el('h3', {}, [c.title || c.type])]);
+  if (c.subtitle) ttl.append(el('div', {class: 'sub'}, [c.subtitle]));
+  hd.append(ttl);
+  const x = el('button', {class: 'x', title: 'remove'}, ['×']);
+  x.onclick = () => fetch(`/api/cards/${c.id}`, {method: 'DELETE'});
+  hd.append(x);
+  card.append(hd);
+  try {
+    card.append(el('div', {class: 'body'}, [(RENDER[c.type] || renderNote)(c.data)]));
+  } catch (e) {
+    card.append(el('div', {class: 'err'}, ['render error: ' + e.message]));
+  }
+  if (c.sql) card.append(el('div', {class: 'sqlbox'}, [c.sql]));
+  const board = $('#board');
+  prepend ? board.prepend(card) : board.append(card);
+}
+
+/* ---------------------------------------------------------------- schema */
+async function loadSchema() {
+  const s = await (await fetch('/api/schema')).json();
+  $('#ds').textContent = s.dataset;
+  const box = $('#schema');
+  box.textContent = '';
+  s.tables.forEach(t => {
+    const d = el('details', {class: 'tbl'});
+    const sum = el('summary');
+    sum.innerHTML = `<span>${t.name}</span><span class="n">${t.rows.toLocaleString()}</span>`;
+    d.append(sum);
+    const cols = el('div', {class: 'cols'});
+    t.columns.forEach(c => {
+      const row = el('div', {class: 'col'});
+      row.innerHTML = `<span>${c.name}</span><span class="t">${c.type}</span>`;
+      row.onclick = () => {
+        const ta = $('#sql');
+        ta.value = `SELECT ${c.name}, COUNT(*) AS n\nFROM ${t.name}\nGROUP BY 1 ORDER BY n DESC;`;
+        ta.focus();
+      };
+      cols.append(row);
+    });
+    d.append(cols);
+    box.append(d);
+  });
+}
+
+/* ------------------------------------------------------------------- sql */
+let lastResult = null;
+async function runSql() {
+  $('#err').textContent = '';
+  const sql = $('#sql').value;
+  const r = await fetch('/api/query', {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sql})});
+  if (!r.ok) {
+    $('#err').textContent = (await r.json()).detail;
+    $('#qres').textContent = '';
+    lastResult = null;
+    return;
+  }
+  lastResult = await r.json();
+  $('#qres').textContent = '';
+  $('#qres').append(el('div', {class: 'sub'},
+    [`${lastResult.rows.length} row${lastResult.rows.length === 1 ? '' : 's'}`]));
+  $('#qres').append(renderTable(lastResult));
+}
+$('#run').onclick = runSql;
+$('#pin').onclick = async () => {
+  if (!lastResult) await runSql();
+  if (!lastResult) return;
+  fetch('/api/cards', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({type: 'table', title: 'Query', sql: lastResult.sql,
+      data: lastResult, width: 'half'})});
+};
+$('#sql').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runSql();
+});
+
+/* ------------------------------------------------------------------ chat */
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* just enough markdown to make replies read like the terminal */
+function inline(src) {
+  const blocks = [];
+  // pull fenced code out first so its contents are never marked up
+  let s = esc(src).replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    ` ${blocks.push(`<pre><code>${code.replace(/\n$/, '')}</code></pre>`) - 1} `);
+
+  const span = t => t
+    .replace(/`([^`]+?)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\n]+?)\*/g, '$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  const out = [];
+  let list = null;                       // 'ul' | 'ol' | null
+  const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
+
+  for (const raw of s.split('\n')) {
+    const line = raw.trimEnd();
+    let m;
+    if (/^ \d+ $/.test(line.trim())) { closeList(); out.push(line.trim()); continue; }
+    if (!line.trim()) { closeList(); continue; }
+    if ((m = line.match(/^(#{1,4})\s+(.*)$/))) {
+      closeList();
+      const lvl = Math.min(6, m[1].length + 2);
+      out.push(`<h${lvl}>${span(m[2])}</h${lvl}>`);
+    } else if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) {
+      if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
+      out.push(`<li>${span(m[1])}</li>`);
+    } else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
+      if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; }
+      out.push(`<li>${span(m[1])}</li>`);
+    } else if ((m = line.match(/^>\s?(.*)$/))) {
+      closeList(); out.push(`<blockquote>${span(m[1])}</blockquote>`);
+    } else if (/^(-{3,}|\*{3,})$/.test(line.trim())) {
+      closeList(); out.push('<hr>');
+    } else {
+      closeList(); out.push(`<p>${span(line)}</p>`);
+    }
+  }
+  closeList();
+  return out.join('').replace(/ (\d+) /g, (_, i) => blocks[+i]);
+}
+
+let toolGroup = null;   // consecutive tool calls collapse into one expandable line
+
+function addMsg(m) {
+  $('#chatempty')?.remove();
+  const box = $('#msgs');
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+
+  if (m.role === 'tool') {
+    if (!toolGroup) {
+      toolGroup = el('details', {class: 'msg tools'});
+      toolGroup.append(el('summary', {}, ['working…']));
+      toolGroup.count = 0;
+      box.append(toolGroup);
+    }
+    toolGroup.count++;
+    toolGroup.querySelector('summary').textContent =
+      `${toolGroup.count} step${toolGroup.count === 1 ? '' : 's'}`;
+    const li = el('div', {class: 'step'});
+    li.textContent = m.text;
+    toolGroup.append(li);
+  } else {
+    toolGroup = null;
+    const wrap = el('div', {class: 'msg ' + m.role});
+    wrap.dataset.id = m.id;
+    wrap.append(el('div', {class: 'who'},
+      [m.role === 'user' ? 'you' : m.role === 'error' ? 'error' : 'claude']));
+    const bub = el('div', {class: 'bub'});
+    bub.innerHTML = inline(m.text);
+    wrap.append(bub);
+    box.append(wrap);
+  }
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+function updateMsg(m) {
+  const n = document.querySelector(`.msg[data-id="${m.id}"] .bub`);
+  if (!n) return addMsg(m);
+  n.innerHTML = inline(m.text);
+  const box = $('#msgs');
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ----------------------------------------------------------------- agent */
+let busy = false, poll = null;
+function setBusy(b) {
+  busy = b;
+  $('#send').disabled = b;
+  $('#stop').style.display = b ? '' : 'none';
+  $('#agentstat').innerHTML = b ? '<span class="thinking"></span>thinking…' : '';
+  // The done event can be missed if the stream drops or the queue fills, so while
+  // we think we're busy, reconcile against the server every few seconds.
+  clearInterval(poll);
+  poll = b ? setInterval(async () => {
+    try {
+      const s = await (await fetch('/api/agent')).json();
+      if (!s.busy) setBusy(false);
+    } catch (_) { /* server restarting; try again next tick */ }
+  }, 3000) : null;
+}
+
+async function send() {
+  const ta = $('#ask'), prompt = ta.value.trim();
+  if (!prompt || busy) return;
+  ta.value = '';
+  setBusy(true);
+  const r = await fetch('/api/ask', {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt})});
+  if (!r.ok) {
+    addMsg({id: 'e' + Date.now(), role: 'error',
+            text: (await r.json()).detail || 'request failed'});
+    setBusy(false);
+  }
+}
+$('#send').onclick = send;
+$('#stop').onclick = () => fetch('/api/cancel', {method: 'POST'});
+
+/* click once to arm, again to confirm — avoids a blocking confirm() dialog */
+function armed(btn, label, action) {
+  let timer = null;
+  btn.onclick = async () => {
+    if (!timer) {
+      btn.classList.add('confirm');
+      btn.textContent = 'Sure?';
+      timer = setTimeout(() => {
+        timer = null; btn.classList.remove('confirm'); btn.textContent = label;
+      }, 3000);
+      return;
+    }
+    clearTimeout(timer); timer = null;
+    btn.classList.remove('confirm'); btn.textContent = label;
+    await action();
+  };
+}
+armed($('#newchat'), 'New chat', async () => {
+  await fetch('/api/reset', {method: 'POST'});
+  toolGroup = null;
+  $('#msgs').textContent = '';
+  $('#msgs').append(el('div', {class: 'chat-empty', id: 'chatempty'},
+    ['New conversation — the agent has no memory of the previous one.']));
+});
+armed($('#clearboard'), 'Clear board', () => fetch('/api/cards', {method: 'DELETE'}));
+$('#ask').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+
+/* ------------------------------------------------------------------ live */
+function connect() {
+  const es = new EventSource('/api/stream');
+  es.addEventListener('ping', () => {
+    $('#dot').classList.add('on');
+    $('#stat').textContent = 'live';
+  });
+  es.addEventListener('card', e => addCard(JSON.parse(e.data)));
+  es.addEventListener('delete', e => {
+    const id = JSON.parse(e.data).id;
+    document.querySelector(`.card[data-id="${id}"]`)?.remove();
+  });
+  es.addEventListener('clear', () => {
+    $('#board').textContent = '';
+    $('#board').append(el('div', {class: 'empty', id: 'empty'}, ['No cards yet.']));
+  });
+  es.addEventListener('chat', e => addMsg(JSON.parse(e.data)));
+  es.addEventListener('chat_update', e => updateMsg(JSON.parse(e.data)));
+  es.addEventListener('chat_clear', () => {
+    $('#msgs').textContent = '';
+    $('#chatstat').textContent = '';
+  });
+  es.addEventListener('agent_busy', () => setBusy(true));
+  es.addEventListener('agent_done', () => setBusy(false));
+  es.onerror = () => {
+    $('#dot').classList.remove('on');
+    $('#stat').textContent = 'reconnecting';
+  };
+}
+
+(async () => {
+  await loadSchema();
+  const cards = await (await fetch('/api/cards')).json();
+  cards.forEach(c => addCard(c, false));
+  const msgs = await (await fetch('/api/chat')).json();
+  msgs.forEach(addMsg);
+  const ag = await (await fetch('/api/agent')).json();
+  $('#chatstat').textContent = ag.available ? 'claude code' : 'claude code not found';
+  if (!ag.available) {
+    $('#ask').disabled = $('#send').disabled = true;
+    $('#ask').placeholder = 'Install Claude Code and sign in, then restart the server';
+  }
+  setBusy(ag.busy);
+  connect();
+})();
+</script>
+</body>
+</html>

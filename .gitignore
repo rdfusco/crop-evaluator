@@ -1,0 +1,23 @@
+# Dashboard state — contains your conversation text. Never commit.
+app/.state.json
+
+# Per-machine Claude Code tool approvals. Personal, accumulates over time, and grants
+# shell permissions that shouldn't follow the repo to other people. The rest of
+# .claude/ is tracked, so shared agents, skills and commands added later will ship.
+.claude/settings.local.json
+
+# Private working document — kept local, not part of the published prototype.
+ai_crop_evaluation_breeding_context.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Scratch
+*.tmp
+*.log
+
+# Generated databases can be large; drop the leading "#" to keep them local only.
+# data/**/data.db
