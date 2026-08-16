@@ -144,8 +144,3 @@ The bundled dataset is the supplementary material from Roohanitaziani et al. (20
 *Exploration of a Resequenced Tomato Core Collection for Phenotypic and Genotypic
 Variation in Plant Growth and Fruit Quality Traits*, **Genes** 11(11):1278 —
 open access under CC BY. <https://www.mdpi.com/2073-4425/11/11/1278>
-
-## Status
-
-Prototype. It is a working demonstration of the ingestion → dashboard → chat loop, not
-a product.
