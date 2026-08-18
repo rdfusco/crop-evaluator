@@ -33,8 +33,8 @@ produced it and the caveats that qualify it.
 
 ![Repeatability of each trait across seasons and greenhouse compartments](screenshots/repeatability.png)
 
-Because the answers are only as good as the measurements, the agent will check how well a
-trait even reproduces before drawing conclusions from it.
+Each trait measured twice — 2013 against 2014, compartment 1 against 2 — bounding how
+strong any correlation involving it can honestly be.
 
 Card types are table, bar, scatter, histogram, correlation heatmap, dendrogram, and
 markdown note — all hand-rendered SVG, no charting library.
