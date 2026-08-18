@@ -19,5 +19,6 @@ venv/
 *.tmp
 *.log
 
-# Generated databases can be large; drop the leading "#" to keep them local only.
-# data/**/data.db
+# Derived databases. The tomato data.db is ~25 MB and rebuilds from the committed
+# source workbook in about half a minute, so it is kept local rather than committed.
+data/**/data.db

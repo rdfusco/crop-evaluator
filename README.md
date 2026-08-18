@@ -57,14 +57,17 @@ nice-to-have if you want to poke around the ingested database yourself
 git clone <this-repo>
 cd crop-evaluator
 pip install -r requirements.txt
+python data/tomato-genes/ingest.py
 cd app
 python server.py
 ```
 
 Then open **http://127.0.0.1:8000**
 
-The tomato database is committed, so there is no ingestion or build step — a fresh
-clone runs as-is.
+The `ingest.py` line is a one-time build step: it reads the bundled source workbook and
+writes `data/tomato-genes/data.db` (~25 MB, about half a minute on a laptop). The
+database is derived data, so it isn't committed — rerunning the script is harmless and
+reproduces it exactly.
 
 > Run it from `app/`, not the repo root. `server.py` imports its sibling modules
 > directly and won't resolve them otherwise.
@@ -119,7 +122,8 @@ limits of the agent's tool restrictions.
 
 ```
 app/         the dashboard — server, analytics, card-push CLI, static page
-data/        datasets; each holds its sources, a data.db, and a semantics.md
+data/        datasets; each holds its sources, its ingest script, and a semantics.md
+             (data.db is built locally, not committed)
 methods/     analysis-guide.md — statistical and genomic method guidance the
              chat agent reads before any analysis, distilled from open-access
              sources and from what this codebase can actually do

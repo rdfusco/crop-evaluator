@@ -2,7 +2,8 @@
 #   pip install -r requirements.txt
 #
 # Verified working on Python 3.12.10 with:
-#   fastapi 0.128.0, uvicorn 0.40.0, pydantic 2.11.4, numpy 1.26.4, scipy 1.15.2
+#   fastapi 0.128.0, uvicorn 0.40.0, pydantic 2.11.4, numpy 1.26.4, scipy 1.15.2,
+#   pandas 2.2.2, openpyxl 3.1.5
 
 fastapi>=0.110
 uvicorn>=0.30
@@ -10,7 +11,13 @@ pydantic>=2.0
 numpy>=1.26
 scipy>=1.11
 
-# Ingesting a new dataset (see ingest.md) additionally needs a spreadsheet reader,
-# and a PDF reader if the sources include PDFs. Not required to run the dashboard:
+# Reading source workbooks. Required, not optional: data.db is not committed, so a
+# fresh clone builds it with data/tomato-genes/ingest.py before the dashboard has
+# anything to show.
+pandas>=2.0
+openpyxl>=3.1
+
+# Ingesting a dataset whose sources include PDFs (see ingest.md) additionally needs a
+# PDF reader. The bundled tomato dataset skips its PDFs, so this stays optional:
 #
-#   pip install pandas openpyxl pypdf
+#   pip install pypdf

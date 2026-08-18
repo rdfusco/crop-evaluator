@@ -4,7 +4,7 @@ Reproduces data.db from the source workbook. Run from anywhere:
 
     python data/tomato-genes/ingest.py
 
-Rebuilding is not required to use the dashboard — data.db is committed.
+data.db is not committed. Build it once after cloning, before starting the dashboard.
 """
 import os, re, sqlite3, pandas as pd
 

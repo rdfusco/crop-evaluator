@@ -25,6 +25,9 @@ methods/      analysis-guide.md — method + tooling guidance
 ingest.md     procedure for ingesting a new messy dataset
 ```
 
+`data/<dataset>/data.db` is gitignored — it is derived data. A fresh clone builds the
+bundled one with `python data/tomato-genes/ingest.py` (about half a minute).
+
 `ai_crop_evaluation_breeding_context.md` (product context and roadmap) is gitignored and
 present only on the author's machine. If it's missing it was never published, not deleted.
 
